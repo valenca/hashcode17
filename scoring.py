@@ -1,15 +1,57 @@
 import operator
 
 """
+Scores the output file
+"""
+def scoreOutputFile(outputFile, requests, endpoints):
+    cachedVideos = readOutputFile(outputFile)
+
+    scoreNumerator = 0
+    scoreDenominator = 0
+
+    for request in requests:
+        video, endpoint, cardinality = request
+        rootServerLatency, nCaches = endpoints[endpoint][0]
+        requestGain = outputFile_getLatencyGainForRequest(video, rootServerLatency, endpoints[endpoint][1], cachedVideos)
+
+        scoreNumerator += requestGain * cardinality
+        scoreDenominator += cardinality
+
+    return (scoreNumerator / scoreDenominator) * 1000
+
+"""
+Used to get the latency gain of the caches versus root dc when scoring the output file.
+"""
+def outputFile_getLatencyGainForRequest(video, rootServerLatency, cacheConnections, cachedVideos):
+
+        latencies = {}
+
+        for cacheServer in cacheConnections.keys():
+            latency = cacheConnections[cacheServer]
+
+            if video in cachedVideos[cacheServer]:
+                improvement = rootServerLatency - latency
+                if (improvement > 0):
+                    latencies[cacheServer] = improvement
+
+        if len(latencies) == 0:
+            return 0
+        else:
+            return max(latencies.values())
+
+"""
 Reads the file outputed by the program from stdin
 TESTED!!
 """
-def readOutputFile():
-    nCacheServers = int(raw_input())
+def readOutputFile(outputfile):
+
+    input = [i.strip() for i in open(outputfile, 'r').read().split('\n') if i != '']
+
+    nCacheServers = int(input[0])
     cachedVideos = {}
 
-    for i in xrange(nCacheServers):
-        line = map(int, raw_input().split())
+    for i in input[1:]:
+        line = map(int, i.split())
         cacheServerId = line[0]
         videos = line[1:]
 
@@ -53,3 +95,26 @@ def getLatencyGainForRequest(video, rootServerLatency, cacheConnections, cacheSe
             return 0
         else:
             return max(latencies.values())
+
+if __name__ == "__main__":
+
+    V,E,R,C,X = map(int,raw_input().split())
+
+    print V,E,R,C,X
+
+    videos = list(map(int,raw_input().split()))
+
+    endpoints = []
+    for i in xrange(E):
+        endpoints.append([list(map(int,raw_input().split()))])
+        endpoint = []
+        for j in xrange(endpoints[-1][0][1]):
+           endpoint.append(list(map(int,raw_input().split())))
+        endpoints[-1].append(dict(endpoint))
+
+    requests = []
+    for i in xrange(R):
+        requests.append(list(map(int,raw_input().split())))
+
+    from sys import argv
+    print("Score: " + str(scoreOutputFile(argv[1], requests, endpoints)))
