@@ -42,7 +42,7 @@ def getLatencyGainForRequest(rootServerLatency, cacheConnections, cacheServers):
 
         latencies = {}
 
-        for cacheServer in cacheConnections:
+        for cacheServer in cacheConnections.keys():
             latency = cacheConnections[cacheServer]
             if cacheServers[cacheServer][video] != 0:
                 improvement = rootServerLatency - latency
