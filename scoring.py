@@ -3,8 +3,8 @@ import operator
 """
 Scores the output file
 """
-def scoreOutputFile(requests, endpoints):
-    cachedVideos = readOutputFile()
+def scoreOutputFile(outputfile, requests, endpoints):
+    cachedVideos = readOutputFile(
 
     scoreNumerator = 0
     scoreDenominator = 0
@@ -42,12 +42,15 @@ def outputFile_getLatencyGainForRequest(video, rootServerLatency, cacheConnectio
 Reads the file outputed by the program from stdin
 TESTED!!
 """
-def readOutputFile():
-    nCacheServers = int(raw_input())
+def readOutputFile(outputfile):
+
+    input = [i.strip() for i in open(outputfile, 'r').read().split('\n') if i != '']
+
+    nCacheServers = int(input[0])
     cachedVideos = {}
 
-    for i in xrange(nCacheServers):
-        line = map(int, raw_input().split())
+    for i in input[1:]:
+        line = map(int, i.split())
         cacheServerId = line[0]
         videos = line[1:]
 
@@ -91,3 +94,32 @@ def getLatencyGainForRequest(video, rootServerLatency, cacheConnections, cacheSe
             return 0
         else:
             return max(latencies.values())
+
+if __name__ == "__main__":
+
+    V,E,R,C,X = map(int,raw_input().split())
+
+    print V,E,R,C,X
+
+    videos = list(map(int,raw_input().split()))
+
+    endpoints = []
+    for i in xrange(E):
+        endpoints.append([list(map(int,raw_input().split()))])
+        endpoint = []
+        for j in xrange(endpoints[-1][0][1]):
+           endpoint.append(list(map(int,raw_input().split())))
+        endpoints[-1].append(dict(endpoint))
+
+    requests = []
+    for i in xrange(R):
+        requests.append(list(map(int,raw_input().split())))
+
+    print videos
+    print
+    print endpoints
+    print
+    print requests
+
+    from sys import argv
+    print("Score: " + str(scoreOutputFile(sys.argv[1], requests, endpoints)))
