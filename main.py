@@ -4,8 +4,6 @@ print V,E,R,C,X
 
 videos = list(map(int,raw_input().split()))
 
-print videos
-
 endpoints = []
 for i in xrange(E):
 	endpoints.append([list(map(int,raw_input().split()))])
