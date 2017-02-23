@@ -1,9 +1,11 @@
-from random import randint
+from random import randint, seed, random
 import scoring
+from copy import deepcopy
+import sys
 
 V, E, R, C, X = map(int, raw_input().split())
 
-print(V, E, R, C, X)
+# print(V, E, R, C, X)
 
 videos = map(int, raw_input().split())
 
@@ -19,20 +21,21 @@ requests = []
 for i in xrange(R):
     requests.append(map(int,raw_input().split()))
 
-print(videos)
-print()
-print(endpoints)
-print()
-print(requests)
+# print(videos)
+# print()
+# print(endpoints)
+# print()
+# print(requests)
 
 empty_solution = [[0]*V for i in xrange(C)]
 
 def free_cache(server):
-    return X - sum([videos[i] if server[i] == 1 else 0 for i in xrange(V)])
+    return X - sum([videos[i]*server[i] for i in xrange(V)])
 
 def perm_cache(server):
     r = randint(0, V-1)
-    server[r] ^= 1
+    # server[r] ^= 1
+    server[r] = 1
     return server
 
 def swap_cache(server):
@@ -42,13 +45,21 @@ def swap_cache(server):
     server[r0], server[r1] = server[r1], server[r0] 
     return server
 
+def swap_rnd_cache(server_list):
+    r = randint(0, V-1)
+    tmpi = perm_cache(server_list[i][:])
+    if free_cache(tmpi) >= 0:
+        server_list[i] = tmpi
+    return server_list
+
 def random_solution():
-    solution = empty_solution[:]
-    for i in solution:
-        tmpi = perm_cache(i)
-        free = free_cache(tmpi)
-        if free >= 0:
-            i = tmpi
+    solution = deepcopy(empty_solution)
+    for j in xrange(10):
+        for i in xrange(len(solution)):
+            tmpi = perm_cache(solution[i][:])
+            free = free_cache(tmpi)
+            if free >= 0:
+                solution[i] = tmpi
     return solution
 
 def swap_server(server_list):
@@ -58,9 +69,90 @@ def swap_server(server_list):
     server_list[r0], server_list[r1] = server_list[r1], server_list[r0]
     return server_list
 
-sol = random_solution()
-print(scoring.scoreLocalSearchInstance(sol, requests, endpoints))
+getScore = scoring.scoreLocalSearchInstance
 
-sol = swap_server(sol)
+def local_search():
+    sol = random_solution()
+    score = getScore(sol, requests, endpoints)
+    for i in xrange(10):
+        sys.stderr.write(str(i)+"-"+str(score)+"\n")
+        # tmp = swap_server(sol)
+        # tmpScore = getScore(tmp, requests, endpoints)
+        # if tmpScore > score:
+        #     sol = deepcopy(tmp)
+        #     score = tmpScore
+        tmp = swap_rnd_cache(sol)
+        tmpScore = getScore(tmp, requests, endpoints)
+        if tmpScore > score:
+            # sol = deepcopy(tmp)
+            sol = tmp
+            score = tmpScore
+    return sol, score
 
-print(sol)
+def print_solution(sol):
+    print(len(sol))
+    for i in xrange(len(sol)):
+        print i,
+        for j in xrange(len(sol[i])):
+            if sol[i][j] == 1:
+                print j,
+        print
+    
+
+# seed(8)
+def local_search2():
+    #sol = random_solution()
+    sol = deepcopy(empty_solution)
+    score = getScore(sol, requests, endpoints)
+    flag = 1
+    while(flag):
+        flag = 0
+        for i in xrange(len(sol)):
+            free = free_cache(sol[i])
+            if free <= 0:
+                continue
+            for j in xrange(len(sol[i])):
+                if sol[i][j] == 0 and free - videos[j] >= 0:
+                    if random() > 0.7:
+                        free -= videos[j]
+                        sol[i][j] = 1
+                        tmpScore = getScore(sol, requests, endpoints)
+                        if tmpScore <= score:
+                            sol[i][j] = 0
+                            free += videos[j]
+                        else:
+                            flag = 1
+                            score = tmpScore
+        # sys.stderr.write("-"+str(score)+"\n")
+    
+    for i in xrange(len(sol)):
+        free = free_cache(sol[i])
+        if free <= 0:
+            continue
+        for j in xrange(len(sol[i])):
+            if sol[i][j] == 0 and free - videos[j] >= 0:
+                free -= videos[j]
+                sol[i][j] = 1
+                tmpScore = getScore(sol, requests, endpoints)
+                if tmpScore < score:
+                    sol[i][j] = 0
+                    free += videos[j]
+                else:
+                    score = tmpScore
+        # sys.stderr.write("- "+str(score)+"\n")
+
+    return sol, score
+
+scoreBest = 0
+bestSol = []
+for i in xrange(1000):
+    solution, score = local_search2()
+    if scoreBest < score:
+        scoreBest = score
+        bestSol = solution
+    # sys.stderr.write("-->"+str(i)+" "+str(score)+"\n")
+
+print_solution(solution)
+
+sys.stderr.write(str(scoreBest)+"\n")
+
