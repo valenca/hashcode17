@@ -3,8 +3,8 @@ import operator
 """
 Scores the output file
 """
-def scoreOutputFile(outputfile, requests, endpoints):
-    cachedVideos = readOutputFile(
+def scoreOutputFile(outputFile, requests, endpoints):
+    cachedVideos = readOutputFile(outputFile)
 
     scoreNumerator = 0
     scoreDenominator = 0
@@ -28,7 +28,8 @@ def outputFile_getLatencyGainForRequest(video, rootServerLatency, cacheConnectio
 
         for cacheServer in cacheConnections.keys():
             latency = cacheConnections[cacheServer]
-            if cachedVideos[cacheServer][video] != 0:
+
+            if video in cachedVideos[cacheServer]:
                 improvement = rootServerLatency - latency
                 if (improvement > 0):
                     latencies[cacheServer] = improvement
@@ -115,11 +116,5 @@ if __name__ == "__main__":
     for i in xrange(R):
         requests.append(list(map(int,raw_input().split())))
 
-    print videos
-    print
-    print endpoints
-    print
-    print requests
-
     from sys import argv
-    print("Score: " + str(scoreOutputFile(sys.argv[1], requests, endpoints)))
+    print("Score: " + str(scoreOutputFile(argv[1], requests, endpoints)))
