@@ -27,8 +27,8 @@ def scoreLocalSearchInstance(cacheServers, requests, endpoints):
 
     for request in requests:
         video, endpoint, cardinality = request
-        rootServerLatency, nCaches = endpoints[0]
-        requestGain = getLatencyGainForRequest(rootServerLatency, endpoints[1:], cacheServers)
+        rootServerLatency, nCaches = endpoints[endpoint][0]
+        requestGain = getLatencyGainForRequest(rootServerLatency, endpoints[endpoint][1:], cacheServers)
 
         scoreNumerator += requestGain * cardinality
         scoreDenominator += cardinality
@@ -42,8 +42,8 @@ def getLatencyGainForRequest(rootServerLatency, cacheConnections, cacheServers):
 
         latencies = {}
 
-        for cacheConnection in cacheConnections:
-            cacheServer, latency = cacheConnection
+        for cacheServer in cacheConnections:
+            latency = cacheConnection[cacheConnections]
             if cacheServers[cacheServer][video] != 0:
                 improvement = rootServerLatency - latency
                 if (improvement > 0):
@@ -53,4 +53,3 @@ def getLatencyGainForRequest(rootServerLatency, cacheConnections, cacheServers):
             return 0
         else:
             return max(latencies.values())
-
