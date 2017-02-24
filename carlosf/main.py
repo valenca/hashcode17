@@ -90,8 +90,8 @@ def local_search():
     return sol, score
 
 def print_solution(sol):
-    print(len(sol))
-    for i in xrange(len(sol)):
+    print(C)
+    for i in xrange(C):
         print i,
         for j in xrange(len(sol[i])):
             if sol[i][j] == 1:
@@ -102,46 +102,52 @@ def print_solution(sol):
 # seed(8)
 def local_search2():
     #sol = random_solution()
-    sol = deepcopy(empty_solution)
+    sol = [[0]*V for i in xrange(C)]
+    freeC = [X]*C
     score = getScore(sol, requests, endpoints)
     flag = 1
     while(flag):
         flag = 0
-        for i in xrange(len(sol)):
-            free = free_cache(sol[i])
-            if free <= 0:
+        for i in xrange(C):
+            # free = free_cache(sol[i])
+            if freeC[i] <= 0:
                 continue
-            for j in xrange(len(sol[i])):
-                if sol[i][j] == 0 and free - videos[j] >= 0:
-                    if random() > 0.7:
-                        free -= videos[j]
+            for j in xrange(V):
+                if sol[i][j] == 0 and freeC[i] - videos[j] >= 0:
+                    if random() > 0.4:
+                        freeC[i] -= videos[j]
                         sol[i][j] = 1
                         tmpScore = getScore(sol, requests, endpoints)
                         if tmpScore <= score:
                             sol[i][j] = 0
-                            free += videos[j]
+                            freeC[i] += videos[j]
                         else:
                             flag = 1
                             score = tmpScore
+                if freeC[i] - minVideo <= 0:
+                    break
         # sys.stderr.write("-"+str(score)+"\n")
     
-    for i in xrange(len(sol)):
-        free = free_cache(sol[i])
-        if free <= 0:
+    for i in xrange(C):
+        if freeC[i] <= 0:
             continue
-        for j in xrange(len(sol[i])):
-            if sol[i][j] == 0 and free - videos[j] >= 0:
-                free -= videos[j]
+        for j in xrange(V):
+            if sol[i][j] == 0 and freeC[i] - videos[j] >= 0:
+                freeC[i] -= videos[j]
                 sol[i][j] = 1
                 tmpScore = getScore(sol, requests, endpoints)
                 if tmpScore < score:
                     sol[i][j] = 0
-                    free += videos[j]
+                    freeC[i] += videos[j]
                 else:
                     score = tmpScore
+            if freeC[i] - minVideo <= 0:
+                break
         # sys.stderr.write("- "+str(score)+"\n")
 
     return sol, score
+
+minVideo = min(videos)
 
 scoreBest = 0
 bestSol = []
@@ -150,7 +156,7 @@ for i in xrange(1000):
     if scoreBest < score:
         scoreBest = score
         bestSol = solution
-    # sys.stderr.write("-->"+str(i)+" "+str(score)+"\n")
+    sys.stderr.write("-->"+str(i)+" "+str(score)+"\n")
 
 print_solution(solution)
 

@@ -17,7 +17,7 @@ def scoreOutputFile(outputFile, requests, endpoints):
         scoreNumerator += requestGain * cardinality
         scoreDenominator += cardinality
 
-    return (scoreNumerator / scoreDenominator) * 1000
+    return (scoreNumerator / float(scoreDenominator)) * 1000
 
 """
 Used to get the latency gain of the caches versus root dc when scoring the output file.
