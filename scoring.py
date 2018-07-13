@@ -1,4 +1,5 @@
 import operator
+from sys import argv
 
 """
 Scores the output file
@@ -17,28 +18,22 @@ def scoreOutputFile(outputFile, requests, endpoints):
         scoreNumerator += requestGain * cardinality
         scoreDenominator += cardinality
 
-    return (scoreNumerator / scoreDenominator) * 1000
+    return ((scoreNumerator*1.0) / scoreDenominator) * 1000
 
 """
 Used to get the latency gain of the caches versus root dc when scoring the output file.
 """
 def outputFile_getLatencyGainForRequest(video, rootServerLatency, cacheConnections, cachedVideos):
 
-        latencies = {}
+        improvement = 0
 
         for cacheServer in cacheConnections.keys():
             latency = cacheConnections[cacheServer]
 
             if video in cachedVideos[cacheServer]:
-                improvement = rootServerLatency - latency
-                if (improvement > 0):
-                    latencies[cacheServer] = improvement
+                improvement = max(improvement, rootServerLatency - latency)
 
-        if len(latencies) == 0:
-            return 0
-        else:
-            return max(latencies.values())
-
+        return improvement
 """
 Reads the file outputed by the program from stdin
 TESTED!!
@@ -51,7 +46,7 @@ def readOutputFile(outputfile):
     cachedVideos = {}
 
     for i in input[1:]:
-        line = map(int, i.split())
+        line = list(map(int, i.split()))
         cacheServerId = line[0]
         videos = line[1:]
 
@@ -96,25 +91,39 @@ def getLatencyGainForRequest(video, rootServerLatency, cacheConnections, cacheSe
         else:
             return max(latencies.values())
 
-if __name__ == "__main__":
-
-    V,E,R,C,X = map(int,raw_input().split())
-
-    print V,E,R,C,X
-
-    videos = list(map(int,raw_input().split()))
-
+"""
+Reads the input file and returns requests and endpoints
+"""
+def readInputFile(inputFile):
     endpoints = []
-    for i in xrange(E):
-        endpoints.append([list(map(int,raw_input().split()))])
-        endpoint = []
-        for j in xrange(endpoints[-1][0][1]):
-           endpoint.append(list(map(int,raw_input().split())))
-        endpoints[-1].append(dict(endpoint))
-
     requests = []
-    for i in xrange(R):
-        requests.append(list(map(int,raw_input().split())))
+    with open(inputFile, 'r') as f:
+        lines = f.readlines()
+        V,E,R,C,X = list(map(int,lines[0].split()))
+        videos = list(map(int,lines[1].split()))
+        l = 2
+        for _ in range(E):
+            endpoints.append([list(map(int,lines[l].split()))])
+            l += 1
+            endpoint = []
+            for _ in range(endpoints[-1][0][1]):
+                endpoint.append(list(map(int,lines[l].split())))
+                l += 1
+            endpoints[-1].append(dict(endpoint))
 
-    from sys import argv
-    print("Score: " + str(scoreOutputFile(argv[1], requests, endpoints)))
+        requests = []
+        for _ in range(R):
+            requests.append(list(map(int,lines[l].split())))
+            l += 1
+
+    return endpoints, requests
+
+if __name__ == "__main__":
+    if(len(argv) != 3):
+        print("Usage: ")
+        print("  python scoring.py inputFile outputFile")
+        exit(0)
+
+    endpoints, requests = readInputFile(argv[1])
+
+    print("Score: " + str(scoreOutputFile(argv[2], requests, endpoints)))
